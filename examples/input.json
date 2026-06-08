@@ -1,0 +1,8 @@
+{
+  "shipments": [
+    {"id": "internal-001", "number": "080-38652331"},
+    {"id": "internal-002", "number": "501-20285134"},
+    {"id": "internal-006", "number": "TLLU4912250"},
+    {"id": "internal-011", "number": "hello-bad-number"}
+  ]
+}

@@ -1,0 +1,443 @@
+{
+  "request_id": "cli-728edc30",
+  "checked_at": "2026-06-08T11:58:43.479070Z",
+  "summary": {
+    "total": 4,
+    "success": 2,
+    "failed": 2
+  },
+  "results": [
+    {
+      "input": {
+        "id": "internal-001",
+        "number": "080-38652331",
+        "type": null,
+        "carrier": null,
+        "comment": null
+      },
+      "detected": {
+        "type": "air_awb",
+        "normalized_number": "080-38652331",
+        "carrier": {
+          "name": "LOT Polish Airlines",
+          "code": "LO",
+          "source": "awb_prefix"
+        }
+      },
+      "tracking": {
+        "current_status": "in_transit",
+        "raw_status": "In transit / transfer (MAN)",
+        "status_uk": "У дорозі",
+        "last_event": {
+          "event_code": null,
+          "event_name": "In transit / transfer (MAN)",
+          "location": "DOH",
+          "datetime": "2026-06-07T06:10:00+02:00",
+          "is_actual": true
+        },
+        "dates": {
+          "etd": {
+            "datetime": "2026-06-05T18:00:00+08:00",
+            "raw_datetime": "2026-06-05T18:00:00+08:00",
+            "timezone": "+08:00",
+            "timezone_confidence": "source_provided"
+          },
+          "eta": {
+            "datetime": "2026-06-08T10:30:00+02:00",
+            "raw_datetime": "2026-06-08T10:30:00+02:00",
+            "timezone": "+02:00",
+            "timezone_confidence": "source_provided"
+          },
+          "actual_departure": null,
+          "actual_arrival": null
+        },
+        "route": {
+          "origin": "HKG",
+          "destination": "WAW",
+          "transit_points": []
+        },
+        "events": [
+          {
+            "event_code": null,
+            "event_name": "Cargo received from shipper (RCS)",
+            "normalized_status": "received",
+            "location": "HKG",
+            "datetime": "2026-06-05T09:15:00+08:00",
+            "raw_text": "Cargo received from shipper (RCS)"
+          },
+          {
+            "event_code": null,
+            "event_name": "Departed from origin airport (DEP)",
+            "normalized_status": "departed",
+            "location": "HKG",
+            "datetime": "2026-06-05T18:45:00+08:00",
+            "raw_text": "Departed from origin airport (DEP)"
+          },
+          {
+            "event_code": null,
+            "event_name": "In transit / transfer (MAN)",
+            "normalized_status": "in_transit",
+            "location": "DOH",
+            "datetime": "2026-06-07T06:10:00+02:00",
+            "raw_text": "In transit / transfer (MAN)"
+          }
+        ]
+      },
+      "source": {
+        "primary_source": "track-trace.com/aircargo",
+        "final_source": "fixtures",
+        "url": "fixture://air_080-38652331.html",
+        "retrieved_at": "2026-06-08T11:58:43.117889Z"
+      },
+      "quality": {
+        "confidence": 0.7,
+        "data_complete": false,
+        "missing_fields": [
+          "actual_departure",
+          "actual_arrival"
+        ],
+        "warnings": []
+      },
+      "risk": {
+        "risk_level": "medium",
+        "delay_detected": true,
+        "reasons": [
+          "past_eta"
+        ]
+      },
+      "errors": [
+        {
+          "code": "PARTIAL_DATA",
+          "message": "Some key fields are missing",
+          "source": "fixtures"
+        }
+      ],
+      "debug": [
+        {
+          "step": "detect_type",
+          "status": "success",
+          "result": "air_awb",
+          "url": null,
+          "events_count": null
+        },
+        {
+          "step": "query:track-trace.com/aircargo",
+          "status": "error",
+          "result": null,
+          "url": null,
+          "events_count": null
+        },
+        {
+          "step": "query:carrier_website",
+          "status": "error",
+          "result": null,
+          "url": null,
+          "events_count": null
+        },
+        {
+          "step": "query:cargoai",
+          "status": "error",
+          "result": null,
+          "url": null,
+          "events_count": null
+        },
+        {
+          "step": "query:fixtures",
+          "status": "ok",
+          "result": null,
+          "url": "fixture://air_080-38652331.html",
+          "events_count": null
+        },
+        {
+          "step": "parse_events",
+          "status": "success",
+          "result": null,
+          "url": null,
+          "events_count": 3
+        }
+      ]
+    },
+    {
+      "input": {
+        "id": "internal-002",
+        "number": "501-20285134",
+        "type": null,
+        "carrier": null,
+        "comment": null
+      },
+      "detected": {
+        "type": "air_awb",
+        "normalized_number": "501-20285134",
+        "carrier": {
+          "name": "United Airlines",
+          "code": "UA",
+          "source": "awb_prefix"
+        }
+      },
+      "tracking": {
+        "current_status": "not_found",
+        "raw_status": null,
+        "status_uk": "Не знайдено",
+        "last_event": null,
+        "dates": {
+          "etd": null,
+          "eta": null,
+          "actual_departure": null,
+          "actual_arrival": null
+        },
+        "route": {
+          "origin": null,
+          "destination": null,
+          "transit_points": []
+        },
+        "events": []
+      },
+      "source": {
+        "primary_source": "track-trace.com/aircargo",
+        "final_source": "fixtures",
+        "url": null,
+        "retrieved_at": "2026-06-08T11:58:43.134483Z"
+      },
+      "quality": {
+        "confidence": 0.0,
+        "data_complete": false,
+        "missing_fields": [],
+        "warnings": []
+      },
+      "risk": {
+        "risk_level": "low",
+        "delay_detected": false,
+        "reasons": []
+      },
+      "errors": [
+        {
+          "code": "NOT_FOUND",
+          "message": "No tracking data found",
+          "source": "fixtures"
+        }
+      ],
+      "debug": [
+        {
+          "step": "detect_type",
+          "status": "success",
+          "result": "air_awb",
+          "url": null,
+          "events_count": null
+        },
+        {
+          "step": "query:track-trace.com/aircargo",
+          "status": "error",
+          "result": null,
+          "url": null,
+          "events_count": null
+        },
+        {
+          "step": "query:carrier_website",
+          "status": "error",
+          "result": null,
+          "url": null,
+          "events_count": null
+        },
+        {
+          "step": "query:cargoai",
+          "status": "error",
+          "result": null,
+          "url": null,
+          "events_count": null
+        },
+        {
+          "step": "query:fixtures",
+          "status": "not_found",
+          "result": null,
+          "url": null,
+          "events_count": null
+        }
+      ]
+    },
+    {
+      "input": {
+        "id": "internal-006",
+        "number": "TLLU4912250",
+        "type": null,
+        "carrier": null,
+        "comment": null
+      },
+      "detected": {
+        "type": "sea_container",
+        "normalized_number": "TLLU4912250",
+        "carrier": null
+      },
+      "tracking": {
+        "current_status": "arrived",
+        "raw_status": "Discharged from vessel",
+        "status_uk": "Прибув",
+        "last_event": {
+          "event_code": null,
+          "event_name": "Discharged from vessel",
+          "location": "Gdansk",
+          "datetime": "2026-06-02T07:30:00+02:00",
+          "is_actual": true
+        },
+        "dates": {
+          "etd": {
+            "datetime": "2026-05-21T20:00:00+03:00",
+            "raw_datetime": "2026-05-21T20:00:00+03:00",
+            "timezone": "+03:00",
+            "timezone_confidence": "source_provided"
+          },
+          "eta": {
+            "datetime": "2026-06-02T06:00:00+02:00",
+            "raw_datetime": "2026-06-02T06:00:00+02:00",
+            "timezone": "+02:00",
+            "timezone_confidence": "source_provided"
+          },
+          "actual_departure": null,
+          "actual_arrival": null
+        },
+        "route": {
+          "origin": "Istanbul",
+          "destination": "Gdansk",
+          "transit_points": []
+        },
+        "events": [
+          {
+            "event_code": null,
+            "event_name": "Gate out empty",
+            "normalized_status": "container_picked_up",
+            "location": "Istanbul Depot",
+            "datetime": "2026-05-20T08:00:00+03:00",
+            "raw_text": "Gate out empty"
+          },
+          {
+            "event_code": null,
+            "event_name": "Loaded on vessel MSC ANNA / 514W",
+            "normalized_status": "in_transit",
+            "location": "Istanbul",
+            "datetime": "2026-05-21T14:00:00+03:00",
+            "raw_text": "Loaded on vessel MSC ANNA / 514W"
+          },
+          {
+            "event_code": null,
+            "event_name": "Discharged from vessel",
+            "normalized_status": "arrived",
+            "location": "Gdansk",
+            "datetime": "2026-06-02T07:30:00+02:00",
+            "raw_text": "Discharged from vessel"
+          }
+        ]
+      },
+      "source": {
+        "primary_source": "track-trace.com/container",
+        "final_source": "fixtures",
+        "url": "fixture://container_TLLU4912250.html",
+        "retrieved_at": "2026-06-08T11:58:43.477382Z"
+      },
+      "quality": {
+        "confidence": 0.7,
+        "data_complete": false,
+        "missing_fields": [
+          "actual_departure",
+          "actual_arrival"
+        ],
+        "warnings": []
+      },
+      "risk": {
+        "risk_level": "low",
+        "delay_detected": false,
+        "reasons": []
+      },
+      "errors": [
+        {
+          "code": "PARTIAL_DATA",
+          "message": "Some key fields are missing",
+          "source": "fixtures"
+        }
+      ],
+      "debug": [
+        {
+          "step": "detect_type",
+          "status": "success",
+          "result": "sea_container",
+          "url": null,
+          "events_count": null
+        },
+        {
+          "step": "query:track-trace.com/container",
+          "status": "error",
+          "result": null,
+          "url": null,
+          "events_count": null
+        },
+        {
+          "step": "query:carrier_website",
+          "status": "error",
+          "result": null,
+          "url": null,
+          "events_count": null
+        },
+        {
+          "step": "query:fixtures",
+          "status": "ok",
+          "result": null,
+          "url": "fixture://container_TLLU4912250.html",
+          "events_count": null
+        },
+        {
+          "step": "parse_events",
+          "status": "success",
+          "result": null,
+          "url": null,
+          "events_count": 3
+        }
+      ]
+    },
+    {
+      "input": {
+        "id": "internal-011",
+        "number": "hello-bad-number",
+        "type": null,
+        "carrier": null,
+        "comment": null
+      },
+      "detected": {
+        "type": "unknown",
+        "normalized_number": "HELLO-BAD-NUMBER",
+        "carrier": null
+      },
+      "tracking": null,
+      "source": {
+        "primary_source": null,
+        "final_source": null,
+        "url": null,
+        "retrieved_at": null
+      },
+      "quality": {
+        "confidence": 0.0,
+        "data_complete": false,
+        "missing_fields": [],
+        "warnings": []
+      },
+      "risk": {
+        "risk_level": "low",
+        "delay_detected": false,
+        "reasons": []
+      },
+      "errors": [
+        {
+          "code": "INVALID_FORMAT",
+          "message": "Number does not match AWB or container format",
+          "source": null
+        }
+      ],
+      "debug": [
+        {
+          "step": "detect_type",
+          "status": "success",
+          "result": "unknown",
+          "url": null,
+          "events_count": null
+        }
+      ]
+    }
+  ]
+}
