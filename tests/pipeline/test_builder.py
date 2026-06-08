@@ -1,6 +1,28 @@
 import asyncio
+import tracking_agent.pipeline.builder as builder
 from tracking_agent.pipeline.builder import build_response, to_short
-from tracking_agent.models.schemas import ShipmentInput
+from tracking_agent.models.schemas import ShipmentInput, ShipmentResult
+
+
+def test_build_response_isolates_per_item_exceptions(monkeypatch):
+    """One shipment raising must not sink the batch (ТЗ §13: independent processing)."""
+    async def flaky(inp):
+        if inp.number == "BOOM":
+            raise RuntimeError("unexpected downstream failure")
+        return ShipmentResult(input=inp)
+
+    monkeypatch.setattr(builder, "process_shipment", flaky)
+    inputs = [ShipmentInput(id="ok1", number="080-38652331"),
+              ShipmentInput(id="bad", number="BOOM"),
+              ShipmentInput(id="ok2", number="TLLU4912250")]
+    resp = asyncio.run(builder.build_response(inputs, request_id="t"))
+
+    assert resp.summary.total == 3
+    assert [r.input.id for r in resp.results] == ["ok1", "bad", "ok2"]  # order kept
+    bad = resp.results[1]
+    assert bad.input.number == "BOOM"
+    assert any(e.code.value == "INTERNAL_ERROR" for e in bad.errors)
+    assert resp.results[0].errors == [] and resp.results[2].errors == []
 
 
 def test_build_response_summary():

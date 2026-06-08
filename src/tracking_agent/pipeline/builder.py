@@ -4,6 +4,7 @@ from .queue import run_batch
 from .orchestrator import process_shipment
 from ..models.schemas import (
     ShipmentInput, ShipmentResult, TrackingResponse, Summary, ShortResult,
+    TrackingError,
 )
 from ..models.enums import ErrorCode, NormalizedStatus
 
@@ -16,8 +17,19 @@ def _is_success(r: ShipmentResult) -> bool:
     return not any(e.code not in _NON_BLOCKING for e in r.errors)
 
 
+async def _safe_process(inp: ShipmentInput) -> ShipmentResult:
+    # Guarantee ТЗ §13 independence: an unexpected failure on one number must
+    # never cancel the batch — it degrades to a structured error result.
+    try:
+        return await process_shipment(inp)
+    except Exception as exc:
+        return ShipmentResult(input=inp, errors=[TrackingError(
+            code=ErrorCode.INTERNAL_ERROR,
+            message=f"Unexpected error: {type(exc).__name__}: {exc}")])
+
+
 async def build_response(inputs: list[ShipmentInput], request_id: str) -> TrackingResponse:
-    results: list[ShipmentResult] = await run_batch(inputs, process_shipment)
+    results: list[ShipmentResult] = await run_batch(inputs, _safe_process)
     success = sum(1 for r in results if _is_success(r))
     failed = len(results) - success
     return TrackingResponse(

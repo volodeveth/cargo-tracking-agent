@@ -11,6 +11,7 @@ async def run_batch(items: list[T], handler: Callable[[T], Awaitable[R]],
                     concurrency: int | None = None) -> list[R]:
     if concurrency is None:
         concurrency = get_settings().max_concurrency
+    concurrency = max(1, concurrency)  # 0/negative would deadlock on the semaphore
     sem = asyncio.Semaphore(concurrency)
     results: list[R] = [None] * len(items)  # type: ignore
 
