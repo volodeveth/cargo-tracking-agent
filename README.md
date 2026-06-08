@@ -167,6 +167,30 @@ uvicorn tracking_agent.api.app:app --reload
 
 Відкрийте http://localhost:8000 для web UI завантаження файлу (приймає `.csv` або `.xlsx`).
 
+**Завантаження CSV через web UI:**
+
+1. Запустіть сервер і відкрийте http://localhost:8000.
+2. Натисніть «Вибрати файл», оберіть `examples/input.csv` і завантажте.
+3. Сторінка покаже JSON-результат трекінгу для кожного рядка.
+
+Очікуваний `examples/input.csv` (колонки `id,number`):
+
+```csv
+id,number
+internal-001,080-38652331
+internal-006,TLLU4912250
+internal-007,999-88887777
+```
+
+Той самий ендпоінт через `curl` (multipart-завантаження файлу):
+
+```bash
+curl -X POST http://localhost:8000/track/file \
+  -F "file=@examples/input.csv"
+```
+
+> `internal-007` (`999-88887777`) — нестандартна сторінка без табличної розмітки: детермінований парсер не дає подій, тож за ввімкненого LLM (`LLM_ENABLED=true`) спрацьовує екстракція подій. Деталі — розділ [Застосування AI](#застосування-ai-тз-101).
+
 Трекінг через `curl`:
 
 ```bash
