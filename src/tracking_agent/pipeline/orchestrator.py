@@ -39,6 +39,7 @@ async def process_shipment(shipment: ShipmentInput) -> ShipmentResult:
     chain = build_chain(number_type, use_fixtures=settings.use_fixtures)
     primary = chain[0].name if chain else None
     conn_result = None
+    transient_errors: list[TrackingError] = []
     for connector in chain:
         cr = await connector.fetch(normalized, number_type)
         result.debug.append(DebugStep(step=f"query:{connector.name}", status=cr.status.value,
@@ -50,13 +51,17 @@ async def process_shipment(shipment: ShipmentInput) -> ShipmentResult:
             conn_result = cr
             break
         if cr.error_code:
-            result.errors.append(TrackingError(code=cr.error_code,
-                                                message=cr.error_message or "", source=cr.source))
+            transient_errors.append(TrackingError(code=cr.error_code,
+                                                  message=cr.error_message or "",
+                                                  source=cr.source))
 
     result.source = SourceInfo(primary_source=primary,
                                final_source=conn_result.source if conn_result else None,
                                url=conn_result.url if conn_result else None,
                                retrieved_at=datetime.now(timezone.utc))
+
+    if conn_result is None:
+        result.errors.extend(transient_errors)
 
     if conn_result is None or conn_result.status == ConnectorStatus.NOT_FOUND:
         result.errors.append(TrackingError(code=ErrorCode.NOT_FOUND,

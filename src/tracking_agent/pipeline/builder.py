@@ -5,11 +5,20 @@ from .orchestrator import process_shipment
 from ..models.schemas import (
     ShipmentInput, ShipmentResult, TrackingResponse, Summary, ShortResult,
 )
+from ..models.enums import ErrorCode, NormalizedStatus
+
+_NON_BLOCKING = {ErrorCode.PARTIAL_DATA}
+
+
+def _is_success(r: ShipmentResult) -> bool:
+    if r.tracking is None or r.tracking.current_status in (None, NormalizedStatus.NOT_FOUND):
+        return False
+    return not any(e.code not in _NON_BLOCKING for e in r.errors)
 
 
 async def build_response(inputs: list[ShipmentInput], request_id: str) -> TrackingResponse:
     results: list[ShipmentResult] = await run_batch(inputs, process_shipment)
-    success = sum(1 for r in results if not r.errors)
+    success = sum(1 for r in results if _is_success(r))
     failed = len(results) - success
     return TrackingResponse(
         request_id=request_id,

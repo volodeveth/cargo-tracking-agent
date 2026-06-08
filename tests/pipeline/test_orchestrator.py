@@ -22,3 +22,18 @@ def test_not_found_number():
     res = asyncio.run(process_shipment(ShipmentInput(id="n", number="501-20285134")))
     assert res.tracking is None or res.tracking.current_status == NormalizedStatus.NOT_FOUND
     assert any(e.code.value == "NOT_FOUND" for e in res.errors)
+
+
+def test_successful_tracking_has_no_transient_connector_errors():
+    """Transient connector failures (SOURCE_UNAVAILABLE, LOGIN_REQUIRED) must not
+    appear in result.errors when tracking ultimately succeeds via a later connector."""
+    res = asyncio.run(process_shipment(ShipmentInput(id="a", number="080-38652331")))
+    assert res.tracking is not None
+    assert res.tracking.current_status is not None
+    assert res.tracking.current_status != NormalizedStatus.NOT_FOUND
+    transient_codes = {"SOURCE_UNAVAILABLE", "LOGIN_REQUIRED"}
+    error_codes = {e.code.value for e in res.errors}
+    assert error_codes.isdisjoint(transient_codes), (
+        f"Transient connector errors leaked into result.errors: "
+        f"{error_codes & transient_codes}"
+    )
