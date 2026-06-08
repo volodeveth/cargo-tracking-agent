@@ -74,6 +74,16 @@ async def process_shipment(shipment: ShipmentInput) -> ShipmentResult:
     result.debug.append(DebugStep(step="parse_events", status="success",
                                   events_count=len(parsed.events)))
     current = normalize_status(parsed.raw_status, number_type)
+
+    if current == NormalizedStatus.UNKNOWN and settings.llm_enabled:
+        from ..llm.assistant import LLMAssistant
+        assistant = LLMAssistant(True, settings.llm_base_url,
+                                 settings.llm_api_key, settings.llm_model)
+        guess = await assistant.normalize_unknown(parsed.raw_status or "", number_type.value)
+        if guess is not None:
+            current = guess
+            result.quality.warnings.append("status_normalized_by_llm")
+
     last = parsed.events[-1] if parsed.events else None
     td = TrackingData(
         current_status=current,
