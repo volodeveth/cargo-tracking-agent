@@ -39,7 +39,9 @@ def _parse_csv(data: bytes) -> list[ShipmentInput]:
     if reader.fieldnames is None or "number" not in reader.fieldnames:
         raise InvalidUploadError("Uploaded file must have a 'number' column")
     return [
-        ShipmentInput(id=row.get("id"), number=row.get("number"))
+        ShipmentInput(id=row.get("id"), number=row.get("number"),
+                      type=row.get("type"), carrier=row.get("carrier"),
+                      comment=row.get("comment"))
         for row in reader
         if row.get("number")
     ]
@@ -54,14 +56,21 @@ def _parse_xlsx(data: bytes) -> list[ShipmentInput]:
     headers = [(str(h).strip().lower() if h is not None else "") for h in rows[0]]
     if "number" not in headers:
         raise InvalidUploadError("Uploaded file must have a 'number' column")
-    idx_id = headers.index("id") if "id" in headers else None
     idx_num = headers.index("number")
+    opt = {col: headers.index(col) for col in ("id", "type", "carrier", "comment")
+           if col in headers}
+
+    def _cell(row, col):
+        i = opt.get(col)
+        return str(row[i]) if i is not None and row[i] is not None else None
+
     out = []
     for r in rows[1:]:
         if r[idx_num] is None:
             continue
-        out.append(ShipmentInput(id=str(r[idx_id]) if idx_id is not None else None,
-                                 number=str(r[idx_num])))
+        out.append(ShipmentInput(id=_cell(r, "id"), number=str(r[idx_num]),
+                                 type=_cell(r, "type"), carrier=_cell(r, "carrier"),
+                                 comment=_cell(r, "comment")))
     return out
 
 

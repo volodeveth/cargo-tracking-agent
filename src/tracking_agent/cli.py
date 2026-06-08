@@ -15,7 +15,9 @@ from .export.sheets import export_to_sheets
 def _load(path: str) -> list[ShipmentInput]:
     if path.endswith(".csv"):
         with open(path, newline="", encoding="utf-8") as f:
-            return [ShipmentInput(id=r.get("id"), number=r["number"])
+            return [ShipmentInput(id=r.get("id"), number=r["number"],
+                                  type=r.get("type"), carrier=r.get("carrier"),
+                                  comment=r.get("comment"))
                     for r in csv.DictReader(f)]
     with open(path, encoding="utf-8") as f:
         data = json.load(f)

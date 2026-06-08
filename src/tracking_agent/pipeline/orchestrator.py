@@ -16,6 +16,19 @@ from ..quality.scorer import score_quality
 from ..quality.risk import assess_risk
 from ..pipeline.router import build_chain
 
+# User-supplied `type` is treated as a hint only: detection from the number is
+# authoritative, so these synonyms exist solely to compare against it.
+_TYPE_SYNONYMS = {
+    "air": NumberType.AIR_AWB, "air_awb": NumberType.AIR_AWB,
+    "awb": NumberType.AIR_AWB, "aircargo": NumberType.AIR_AWB,
+    "sea": NumberType.SEA_CONTAINER, "sea_container": NumberType.SEA_CONTAINER,
+    "container": NumberType.SEA_CONTAINER, "ocean": NumberType.SEA_CONTAINER,
+}
+
+
+def _coerce_type_hint(value: str) -> NumberType | None:
+    return _TYPE_SYNONYMS.get(value.strip().lower())
+
 
 async def process_shipment(shipment: ShipmentInput) -> ShipmentResult:
     settings = get_settings()
@@ -25,16 +38,36 @@ async def process_shipment(shipment: ShipmentInput) -> ShipmentResult:
     result.detected = DetectedInfo(type=number_type, normalized_number=normalized)
     result.debug.append(DebugStep(step="detect_type", status="success", result=number_type.value))
 
+    # Optional user hints are validated against detection, never trusted blindly.
+    hint_warnings: list[str] = []
+    if shipment.type:
+        coerced = _coerce_type_hint(shipment.type)
+        if number_type != NumberType.UNKNOWN and coerced != number_type:
+            hint_warnings.append("type_hint_ignored")
+
     if number_type == NumberType.UNKNOWN:
         result.errors.append(TrackingError(
             code=ErrorCode.INVALID_FORMAT,
             message="Number does not match AWB or container format"))
+        result.quality.warnings.extend(hint_warnings)
         return result
 
     if number_type == NumberType.AIR_AWB:
         carrier = lookup_awb_carrier(normalized)
         if carrier:
             result.detected.carrier = Carrier(**carrier)
+
+    if shipment.carrier:
+        provided = shipment.carrier.strip()
+        if result.detected.carrier is None:
+            # nothing derived from the number -> use the hint, flagged unverified
+            result.detected.carrier = Carrier(name=provided, source="user_provided")
+        else:
+            derived = (result.detected.carrier.name or "").strip().lower()
+            p = provided.lower()
+            # tolerant match: "LOT" vs "LOT Polish Airlines" is consistent, not a conflict
+            if p and derived and p not in derived and derived not in p:
+                hint_warnings.append("carrier_hint_ignored")
 
     chain = build_chain(number_type, use_fixtures=settings.use_fixtures)
     primary = chain[0].name if chain else None
@@ -69,6 +102,7 @@ async def process_shipment(shipment: ShipmentInput) -> ShipmentResult:
                                             source=conn_result.source if conn_result else None))
         result.tracking = TrackingData(current_status=NormalizedStatus.NOT_FOUND,
                                         status_uk=to_ukrainian(NormalizedStatus.NOT_FOUND))
+        result.quality.warnings.extend(hint_warnings)
         return result
 
     parsed = parse_track_trace(conn_result.raw_html, number_type)
@@ -122,6 +156,7 @@ async def process_shipment(shipment: ShipmentInput) -> ShipmentResult:
         result.quality.warnings.append("events_extracted_by_llm")
     if status_normalized_by_llm:
         result.quality.warnings.append("status_normalized_by_llm")
+    result.quality.warnings.extend(hint_warnings)
     result.risk = assess_risk(td)
     if result.quality.missing_fields:
         result.errors.append(TrackingError(code=ErrorCode.PARTIAL_DATA,

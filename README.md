@@ -264,14 +264,23 @@ API доступний за адресою http://localhost:8000.
 }
 ```
 
-Опційні поля для кожного вантажу: `type` (підказка, якій не довіряємо беззастережно), `carrier`, `comment`.
+Обов'язкове поле — лише `number`; `id` зв'язує результат із внутрішнім записом замовника. Опційні поля кожного вантажу: `type`, `carrier`, `comment`.
 
-### CSV
+**Як обробляються підказки (`type` / `carrier`) — використовуємо, але валідуємо:**
+
+- `type` — тип **завжди** визначається з номера (`detect_type`); переданий `type` не може це перевизначити. Якщо він суперечить визначеному — додаємо попередження `type_hint_ignored`, а не довіряємо йому.
+- `carrier` — пріоритет у перевізника, визначеного з AWB-префікса. Якщо визначити не вдалося (напр. для контейнерів), беремо переданий `carrier` із позначкою `source: "user_provided"` (тобто неперевірений). За конфлікту з визначеним — лишаємо визначений і додаємо `carrier_hint_ignored`.
+- `comment` — зберігається й повертається у `result.input.comment` (і в колонці Excel-експорту).
+
+### CSV / Excel
+
+Мінімальні колонки — `id,number`; опційні `type`, `carrier`, `comment` зчитуються так само, як у JSON.
 
 ```csv
-id,number
-internal-001,080-38652331
-internal-006,TLLU4912250
+id,number,type,carrier,comment
+internal-001,080-38652331,air,LOT,rush order
+internal-006,TLLU4912250,container,Maersk,
+internal-007,999-88887777,,,semi-structured demo
 ```
 
 ---
@@ -410,7 +419,7 @@ internal-006,TLLU4912250
 | `confidence` | 0.0–1.0; на основі наявності подій, дат і маршруту |
 | `data_complete` | `true` лише коли всі ключові поля заповнені |
 | `missing_fields` | Список назв відсутніх полів |
-| `warnings` | Некритичні зауваження (напр. `invalid_check_digit`, `status_normalized_by_llm`, `events_extracted_by_llm`) |
+| `warnings` | Некритичні зауваження (напр. `invalid_check_digit`, `status_normalized_by_llm`, `events_extracted_by_llm`, `type_hint_ignored`, `carrier_hint_ignored`) |
 | `explanation` | Пояснення українською, чому дані неповні (заповнюється лише коли LLM увімкнено) |
 
 ### Блок ризику

@@ -4,7 +4,8 @@ from openpyxl import Workbook
 from ..models.schemas import ShipmentResult
 
 _HEADERS = ["id", "number", "type", "current_status", "status_uk",
-            "eta", "etd", "risk_level", "delay_detected", "source", "errors"]
+            "eta", "etd", "risk_level", "delay_detected", "source", "errors",
+            "carrier", "comment"]
 
 
 def _build_workbook(results: list[ShipmentResult]) -> Workbook:
@@ -23,6 +24,8 @@ def _build_workbook(results: list[ShipmentResult]) -> Workbook:
             r.risk.risk_level.value, r.risk.delay_detected,
             r.source.final_source,
             "; ".join(e.code.value for e in r.errors),
+            r.detected.carrier.name if r.detected.carrier else None,
+            r.input.comment,
         ])
     return wb
 

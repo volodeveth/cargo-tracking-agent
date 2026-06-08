@@ -1,4 +1,4 @@
-id,number
-internal-001,080-38652331
-internal-006,TLLU4912250
-internal-007,999-88887777
+id,number,type,carrier,comment
+internal-001,080-38652331,air,LOT,rush order
+internal-006,TLLU4912250,container,Maersk,
+internal-007,999-88887777,,,semi-structured demo
