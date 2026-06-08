@@ -118,3 +118,29 @@ def test_rejects_invalid_enum(monkeypatch):
 
     monkeypatch.setattr(a, "_call", fake_call)
     assert asyncio.run(a.normalize_unknown("x", "air_awb")) is None
+
+
+def test_extract_events_prompt_requests_iso_dates(monkeypatch):
+    a = LLMAssistant(enabled=True, base_url="http://x", api_key="k", model="m")
+    captured = {}
+
+    async def fake_call(prompt):
+        captured["prompt"] = prompt
+        return "[]"
+
+    monkeypatch.setattr(a, "_call", fake_call)
+    asyncio.run(a.extract_events("text", NumberType.AIR_AWB))
+    # asking for ISO 8601 lets valid dates survive the deterministic date parser
+    assert "ISO 8601" in captured["prompt"]
+
+
+def test_extract_events_keeps_valid_iso_datetime(monkeypatch):
+    a = LLMAssistant(enabled=True, base_url="http://x", api_key="k", model="m")
+
+    async def fake_call(prompt):
+        return '[{"event_name": "Departed (DEP)", "datetime": "2026-06-05T14:20:00+02:00"}]'
+
+    monkeypatch.setattr(a, "_call", fake_call)
+    events = asyncio.run(a.extract_events("text", NumberType.AIR_AWB))
+    assert events[0].datetime is not None
+    assert events[0].datetime.year == 2026

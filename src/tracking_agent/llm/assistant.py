@@ -71,6 +71,9 @@ class LLMAssistant:
             "Extract tracking events from the text below as a JSON array. "
             "Each item: {\"event_name\": str, \"location\": str|null, "
             "\"datetime\": str|null, \"raw_text\": str}. "
+            "Format datetime as ISO 8601 with the timezone offset when the text "
+            "provides one (e.g. 2026-06-05T14:20:00+02:00); if an event has no "
+            "date in the text, use null. "
             "Use ONLY information present in the text. Do not invent events, "
             "statuses or dates. If a field is absent, use null. "
             "If there are no events, reply with [].\n\nText:\n" + text
