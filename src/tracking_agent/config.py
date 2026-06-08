@@ -17,6 +17,9 @@ class Settings(BaseSettings):
 
     cargoai_api_key: str = ""
 
+    sheets_spreadsheet_id: str = ""
+    sheets_credentials_path: str = ""
+
     webhook_url: str = ""
     webhook_secret: str = ""
 

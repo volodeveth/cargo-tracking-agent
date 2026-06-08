@@ -1,4 +1,5 @@
 from __future__ import annotations
+import io
 from openpyxl import Workbook
 from ..models.schemas import ShipmentResult
 
@@ -6,7 +7,7 @@ _HEADERS = ["id", "number", "type", "current_status", "status_uk",
             "eta", "etd", "risk_level", "delay_detected", "source", "errors"]
 
 
-def export_results(results: list[ShipmentResult], path: str) -> str:
+def _build_workbook(results: list[ShipmentResult]) -> Workbook:
     wb = Workbook()
     ws = wb.active
     ws.title = "results"
@@ -23,5 +24,15 @@ def export_results(results: list[ShipmentResult], path: str) -> str:
             r.source.final_source,
             "; ".join(e.code.value for e in r.errors),
         ])
-    wb.save(path)
+    return wb
+
+
+def export_results(results: list[ShipmentResult], path: str) -> str:
+    _build_workbook(results).save(path)
     return path
+
+
+def export_results_bytes(results: list[ShipmentResult]) -> bytes:
+    buf = io.BytesIO()
+    _build_workbook(results).save(buf)
+    return buf.getvalue()

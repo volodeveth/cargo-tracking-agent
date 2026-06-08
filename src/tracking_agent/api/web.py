@@ -1,17 +1,26 @@
 from __future__ import annotations
 import csv, io, uuid
-from fastapi import APIRouter, UploadFile, File, HTTPException
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi import APIRouter, UploadFile, File, Form, HTTPException
+from fastapi.responses import HTMLResponse, JSONResponse, Response
 from openpyxl import load_workbook
 from ..models.schemas import ShipmentInput
 from ..pipeline.builder import build_response
+from ..export.excel import export_results_bytes
 
 web_router = APIRouter()
+
+XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 
 _PAGE = """<!doctype html><html><body>
 <h2>Cargo Tracking Agent</h2>
 <form action="/track/file" method="post" enctype="multipart/form-data">
   <input type="file" name="file" accept=".csv,.xlsx"/>
+  <label>Output:
+    <select name="format">
+      <option value="json">JSON</option>
+      <option value="xlsx">Excel (.xlsx)</option>
+    </select>
+  </label>
   <button type="submit">Track</button>
 </form></body></html>"""
 
@@ -57,7 +66,7 @@ def _parse_xlsx(data: bytes) -> list[ShipmentInput]:
 
 
 @web_router.post("/track/file")
-async def track_file(file: UploadFile = File(...)):
+async def track_file(file: UploadFile = File(...), format: str = Form("json")):
     filename = file.filename or ""
     if filename.endswith(".xlsx"):
         parse = _parse_xlsx
@@ -65,10 +74,19 @@ async def track_file(file: UploadFile = File(...)):
         parse = _parse_csv
     else:
         raise HTTPException(status_code=422, detail="Only .csv and .xlsx files are supported")
+    if format not in ("json", "xlsx"):
+        raise HTTPException(status_code=422, detail="format must be 'json' or 'xlsx'")
     data = await file.read()
     try:
         shipments = parse(data)
     except InvalidUploadError as exc:
         raise HTTPException(status_code=422, detail=str(exc))
-    resp = await build_response(shipments, request_id=f"file-{uuid.uuid4().hex[:8]}")
+    request_id = f"file-{uuid.uuid4().hex[:8]}"
+    resp = await build_response(shipments, request_id=request_id)
+    if format == "xlsx":
+        return Response(
+            content=export_results_bytes(resp.results),
+            media_type=XLSX_MIME,
+            headers={"Content-Disposition": f'attachment; filename="{request_id}.xlsx"'},
+        )
     return JSONResponse(resp.model_dump(mode="json"))

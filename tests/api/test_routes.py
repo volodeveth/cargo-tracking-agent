@@ -75,3 +75,44 @@ def test_track_file_unsupported_extension():
         files={"file": ("x.txt", io.BytesIO(b"some content"), "text/plain")},
     )
     assert resp.status_code == 422
+
+
+_XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+
+
+def test_track_endpoint_xlsx_format():
+    import io
+    from openpyxl import load_workbook
+    client = TestClient(create_app())
+    resp = client.post("/track?format=xlsx",
+                       json={"shipments": [{"id": "a", "number": "080-38652331"}]})
+    assert resp.status_code == 200
+    assert _XLSX_MIME in resp.headers["content-type"]
+    assert "attachment" in resp.headers.get("content-disposition", "")
+    ws = load_workbook(io.BytesIO(resp.content)).active
+    assert ws["A1"].value == "id"
+    assert ws["B2"].value == "080-38652331"
+
+
+def test_track_endpoint_defaults_to_json():
+    client = TestClient(create_app())
+    resp = client.post("/track", json={"shipments": [{"id": "a", "number": "080-38652331"}]})
+    assert resp.status_code == 200
+    assert "application/json" in resp.headers["content-type"]
+
+
+def test_track_file_xlsx_export():
+    import io
+    from openpyxl import load_workbook
+    client = TestClient(create_app())
+    csv_content = b"id,number\na1,080-38652331\nb1,TLLU4912250\n"
+    resp = client.post(
+        "/track/file",
+        data={"format": "xlsx"},
+        files={"file": ("batch.csv", io.BytesIO(csv_content), "text/csv")},
+    )
+    assert resp.status_code == 200
+    assert _XLSX_MIME in resp.headers["content-type"]
+    ws = load_workbook(io.BytesIO(resp.content)).active
+    assert ws["A1"].value == "id"
+    assert ws.max_row == 3  # header + 2 rows
