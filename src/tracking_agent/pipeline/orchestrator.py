@@ -67,7 +67,8 @@ async def process_shipment(shipment: ShipmentInput) -> ShipmentResult:
         result.errors.append(TrackingError(code=ErrorCode.NOT_FOUND,
                                             message="No tracking data found",
                                             source=conn_result.source if conn_result else None))
-        result.tracking = TrackingData(current_status=NormalizedStatus.NOT_FOUND)
+        result.tracking = TrackingData(current_status=NormalizedStatus.NOT_FOUND,
+                                        status_uk=to_ukrainian(NormalizedStatus.NOT_FOUND))
         return result
 
     parsed = parse_track_trace(conn_result.raw_html, number_type)
