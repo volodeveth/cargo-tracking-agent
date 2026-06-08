@@ -1,6 +1,5 @@
-from __future__ import annotations
 from typing import Optional
-from datetime import datetime
+import datetime as _dt
 from pydantic import BaseModel, Field
 from .enums import (
     NumberType, NormalizedStatus, ErrorCode, RiskLevel, TimezoneConfidence,
@@ -28,7 +27,7 @@ class DetectedInfo(BaseModel):
 
 
 class DateInfo(BaseModel):
-    datetime: Optional[datetime] = None
+    datetime: Optional[_dt.datetime] = None
     raw_datetime: Optional[str] = None
     timezone: Optional[str] = None
     timezone_confidence: TimezoneConfidence = TimezoneConfidence.UNKNOWN
@@ -39,7 +38,7 @@ class TrackingEvent(BaseModel):
     event_name: Optional[str] = None
     normalized_status: Optional[NormalizedStatus] = None
     location: Optional[str] = None
-    datetime: Optional[datetime] = None
+    datetime: Optional[_dt.datetime] = None
     raw_text: Optional[str] = None
 
 
@@ -47,7 +46,7 @@ class LastEvent(BaseModel):
     event_code: Optional[str] = None
     event_name: Optional[str] = None
     location: Optional[str] = None
-    datetime: Optional[datetime] = None
+    datetime: Optional[_dt.datetime] = None
     is_actual: Optional[bool] = None
 
 
@@ -78,7 +77,7 @@ class SourceInfo(BaseModel):
     primary_source: Optional[str] = None
     final_source: Optional[str] = None
     url: Optional[str] = None
-    retrieved_at: Optional[datetime] = None
+    retrieved_at: Optional[_dt.datetime] = None
 
 
 class Quality(BaseModel):
@@ -127,7 +126,7 @@ class Summary(BaseModel):
 
 class TrackingResponse(BaseModel):
     request_id: str
-    checked_at: datetime
+    checked_at: _dt.datetime
     summary: Summary
     results: list[ShipmentResult] = Field(default_factory=list)
 
@@ -137,8 +136,8 @@ class ShortResult(BaseModel):
     number: str
     type: NumberType
     current_status: Optional[NormalizedStatus] = None
-    eta: Optional[datetime] = None
-    etd: Optional[datetime] = None
-    last_event_at: Optional[datetime] = None
+    eta: Optional[_dt.datetime] = None
+    etd: Optional[_dt.datetime] = None
+    last_event_at: Optional[_dt.datetime] = None
     source: Optional[str] = None
     errors: list[TrackingError] = Field(default_factory=list)
