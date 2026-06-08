@@ -85,6 +85,7 @@ class Quality(BaseModel):
     data_complete: bool = False
     missing_fields: list[str] = Field(default_factory=list)
     warnings: list[str] = Field(default_factory=list)
+    explanation: Optional[str] = None
 
 
 class Risk(BaseModel):
