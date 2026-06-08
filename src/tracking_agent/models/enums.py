@@ -34,6 +34,7 @@ class ErrorCode(str, Enum):
     LOGIN_REQUIRED = "LOGIN_REQUIRED"
     PARSING_FAILED = "PARSING_FAILED"
     PARTIAL_DATA = "PARTIAL_DATA"
+    INTERNAL_ERROR = "INTERNAL_ERROR"
 
 
 class RiskLevel(str, Enum):
