@@ -26,6 +26,7 @@ class TrackTraceAirConnector:
             return html, final_url
 
     async def fetch(self, normalized_number: str, number_type: NumberType) -> ConnectorResult:
+        # Any failure talking to the external site degrades to a structured error so one number never breaks the batch.
         try:
             html, final_url = await self._get_page_html(self.url_template, normalized_number)
         except Exception as exc:
