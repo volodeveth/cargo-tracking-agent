@@ -30,6 +30,20 @@ def _coerce_type_hint(value: str) -> NumberType | None:
     return _TYPE_SYNONYMS.get(value.strip().lower())
 
 
+# Errors worth retrying (transient network issues), per ТЗ §11.
+_TRANSIENT = {ErrorCode.SOURCE_UNAVAILABLE, ErrorCode.TIMEOUT}
+
+
+async def _fetch_with_retry(connector, number: str, number_type: NumberType, retries: int):
+    cr = await connector.fetch(number, number_type)
+    attempts = 0
+    while (cr.status == ConnectorStatus.ERROR and cr.error_code in _TRANSIENT
+           and attempts < retries):
+        attempts += 1
+        cr = await connector.fetch(number, number_type)
+    return cr
+
+
 async def process_shipment(shipment: ShipmentInput) -> ShipmentResult:
     settings = get_settings()
     result = ShipmentResult(input=shipment)
@@ -78,7 +92,7 @@ async def process_shipment(shipment: ShipmentInput) -> ShipmentResult:
     conn_result = None
     transient_errors: list[TrackingError] = []
     for connector in chain:
-        cr = await connector.fetch(normalized, number_type)
+        cr = await _fetch_with_retry(connector, normalized, number_type, settings.source_retries)
         result.debug.append(DebugStep(step=f"query:{connector.name}", status=cr.status.value,
                                       url=cr.url))
         if cr.status == ConnectorStatus.OK and cr.raw_html:
@@ -113,6 +127,12 @@ async def process_shipment(shipment: ShipmentInput) -> ShipmentResult:
     result.debug.append(DebugStep(step="parse_events", status="success",
                                   events_count=len(parsed.events)))
 
+    if settings.debug_artifacts and conn_result.raw_html:
+        from ..storage.debug import save_debug_html
+        path = save_debug_html(settings.debug_dir,
+                               f"{normalized}__{conn_result.source}", conn_result.raw_html)
+        result.debug.append(DebugStep(step="debug_artifact", status="saved", url=path))
+
     assistant = None
     if settings.llm_enabled:
         from ..llm.assistant import LLMAssistant
@@ -132,6 +152,13 @@ async def process_shipment(shipment: ShipmentInput) -> ShipmentResult:
             events_extracted_by_llm = True
             result.debug.append(DebugStep(step="llm_extract_events", status="success",
                                           events_count=len(extracted)))
+
+    # Page was fetched but nothing could be extracted (deterministically or by LLM).
+    if not parsed.events and not parsed.raw_status:
+        result.errors.append(TrackingError(
+            code=ErrorCode.PARSING_FAILED,
+            message="Page fetched but tracking data could not be parsed",
+            source=conn_result.source))
 
     current = normalize_status(parsed.raw_status, number_type)
 

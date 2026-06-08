@@ -8,7 +8,8 @@ from tracking_agent.models.enums import NumberType
 
 def _settings(**over):
     base = dict(use_fixtures=True, llm_enabled=False,
-                llm_base_url="", llm_api_key="", llm_model="")
+                llm_base_url="", llm_api_key="", llm_model="",
+                source_retries=0, debug_artifacts=False, debug_dir="", number_timeout=60)
     base.update(over)
     return SimpleNamespace(**base)
 

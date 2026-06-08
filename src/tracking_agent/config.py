@@ -7,6 +7,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     track_trace_timeout: int = 20
+    number_timeout: int = 60
     source_retries: int = 2
     max_concurrency: int = 3
 
@@ -29,6 +30,7 @@ class Settings(BaseSettings):
     cache_ttl_minutes: int = 60
     db_path: str = "data/tracking.db"
     debug_artifacts: bool = False
+    debug_dir: str = "data/debug"
     use_fixtures: bool = True
 
 

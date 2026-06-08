@@ -1,7 +1,9 @@
 from __future__ import annotations
+import asyncio
 from datetime import datetime, timezone
 from .queue import run_batch
 from .orchestrator import process_shipment
+from ..config import get_settings
 from ..models.schemas import (
     ShipmentInput, ShipmentResult, TrackingResponse, Summary, ShortResult,
     TrackingError,
@@ -18,10 +20,16 @@ def _is_success(r: ShipmentResult) -> bool:
 
 
 async def _safe_process(inp: ShipmentInput) -> ShipmentResult:
-    # Guarantee ТЗ §13 independence: an unexpected failure on one number must
-    # never cancel the batch — it degrades to a structured error result.
+    # Guarantee ТЗ §13 independence: a failure (or hang) on one number must never
+    # cancel the batch — it degrades to a structured error result. A per-number
+    # timeout (ТЗ §11) bounds how long any single shipment can take.
+    timeout = get_settings().number_timeout
     try:
-        return await process_shipment(inp)
+        return await asyncio.wait_for(process_shipment(inp), timeout=timeout)
+    except asyncio.TimeoutError:
+        return ShipmentResult(input=inp, errors=[TrackingError(
+            code=ErrorCode.TIMEOUT,
+            message=f"Processing exceeded the per-number timeout of {timeout}s")])
     except Exception as exc:
         return ShipmentResult(input=inp, errors=[TrackingError(
             code=ErrorCode.INTERNAL_ERROR,

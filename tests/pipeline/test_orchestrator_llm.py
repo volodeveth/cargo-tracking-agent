@@ -14,6 +14,10 @@ def _settings(**over):
         llm_base_url="http://x",
         llm_api_key="k",
         llm_model="m",
+        source_retries=0,
+        debug_artifacts=False,
+        debug_dir="",
+        number_timeout=60,
     )
     base.update(over)
     return SimpleNamespace(**base)

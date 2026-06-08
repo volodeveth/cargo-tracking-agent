@@ -101,6 +101,17 @@ def test_track_endpoint_defaults_to_json():
     assert "application/json" in resp.headers["content-type"]
 
 
+def test_track_short_view():
+    client = TestClient(create_app())
+    resp = client.post("/track?view=short",
+                       json={"shipments": [{"id": "a", "number": "080-38652331"}]})
+    assert resp.status_code == 200
+    data = resp.json()
+    assert isinstance(data, list)
+    assert data[0]["number"] == "080-38652331"
+    assert "current_status" in data[0] and "last_event_at" in data[0]
+
+
 def test_track_file_xlsx_export():
     import io
     from openpyxl import load_workbook
