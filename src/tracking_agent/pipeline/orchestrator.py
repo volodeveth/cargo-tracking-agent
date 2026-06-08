@@ -74,16 +74,36 @@ async def process_shipment(shipment: ShipmentInput) -> ShipmentResult:
     parsed = parse_track_trace(conn_result.raw_html, number_type)
     result.debug.append(DebugStep(step="parse_events", status="success",
                                   events_count=len(parsed.events)))
-    current = normalize_status(parsed.raw_status, number_type)
 
-    if current == NormalizedStatus.UNKNOWN and settings.llm_enabled:
+    assistant = None
+    if settings.llm_enabled:
         from ..llm.assistant import LLMAssistant
         assistant = LLMAssistant(True, settings.llm_base_url,
                                  settings.llm_api_key, settings.llm_model)
+
+    # #3: when the deterministic parser found nothing on a non-standard page,
+    # let the LLM recover events from the semi-structured text.
+    events_extracted_by_llm = False
+    if not parsed.events and assistant is not None:
+        from bs4 import BeautifulSoup
+        text = BeautifulSoup(conn_result.raw_html, "html.parser").get_text(" ", strip=True)
+        extracted = await assistant.extract_events(text, number_type)
+        if extracted:
+            parsed.events = extracted
+            parsed.raw_status = extracted[-1].raw_text or extracted[-1].event_name
+            events_extracted_by_llm = True
+            result.debug.append(DebugStep(step="llm_extract_events", status="success",
+                                          events_count=len(extracted)))
+
+    current = normalize_status(parsed.raw_status, number_type)
+
+    # #4: map a status the deterministic rules could not resolve.
+    status_normalized_by_llm = False
+    if current == NormalizedStatus.UNKNOWN and assistant is not None:
         guess = await assistant.normalize_unknown(parsed.raw_status or "", number_type.value)
         if guess is not None:
             current = guess
-            result.quality.warnings.append("status_normalized_by_llm")
+            status_normalized_by_llm = True
 
     last = parsed.events[-1] if parsed.events else None
     td = TrackingData(
@@ -98,9 +118,19 @@ async def process_shipment(shipment: ShipmentInput) -> ShipmentResult:
     )
     result.tracking = td
     result.quality = score_quality(td)
+    if events_extracted_by_llm:
+        result.quality.warnings.append("events_extracted_by_llm")
+    if status_normalized_by_llm:
+        result.quality.warnings.append("status_normalized_by_llm")
     result.risk = assess_risk(td)
     if result.quality.missing_fields:
         result.errors.append(TrackingError(code=ErrorCode.PARTIAL_DATA,
                                             message="Some key fields are missing",
                                             source=conn_result.source))
+        # #5: explain to the user why the data is incomplete.
+        if assistant is not None:
+            explanation = await assistant.explain_incomplete(
+                result.quality.missing_fields, current.value, conn_result.source)
+            if explanation:
+                result.quality.explanation = explanation
     return result
