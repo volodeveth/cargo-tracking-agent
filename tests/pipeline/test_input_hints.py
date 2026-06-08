@@ -50,3 +50,17 @@ def test_carrier_hint_ignored_when_conflicts_with_derived(monkeypatch):
 def test_comment_is_echoed(monkeypatch):
     res = _run(monkeypatch, ShipmentInput(id="a", number="080-38652331", comment="rush order"))
     assert res.input.comment == "rush order"
+
+
+def test_invalid_iso6346_check_digit_warns_but_does_not_reject(monkeypatch):
+    # MSCU1234567 is the spec's example and has an invalid ISO 6346 check digit
+    res = _run(monkeypatch, ShipmentInput(id="c", number="MSCU1234567"))
+    assert res.detected.type == NumberType.SEA_CONTAINER  # accepted, not rejected
+    assert not any(e.code.value == "INVALID_FORMAT" for e in res.errors)
+    assert "invalid_check_digit" in res.quality.warnings
+
+
+def test_valid_iso6346_check_digit_no_warning(monkeypatch):
+    res = _run(monkeypatch, ShipmentInput(id="c", number="TLLU4912250"))
+    assert res.detected.type == NumberType.SEA_CONTAINER
+    assert "invalid_check_digit" not in res.quality.warnings

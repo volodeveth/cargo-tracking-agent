@@ -6,7 +6,7 @@ from ..models.schemas import (
     LastEvent, SourceInfo, TrackingError, DebugStep,
 )
 from ..models.enums import NumberType, NormalizedStatus, ErrorCode
-from ..detection.detector import detect_type, normalize_number
+from ..detection.detector import detect_type, normalize_number, iso6346_valid
 from ..detection.awb_prefixes import lookup_awb_carrier
 from ..connectors.base import ConnectorStatus
 from ..parsers.track_trace_parser import parse_track_trace
@@ -44,6 +44,10 @@ async def process_shipment(shipment: ShipmentInput) -> ShipmentResult:
         coerced = _coerce_type_hint(shipment.type)
         if number_type != NumberType.UNKNOWN and coerced != number_type:
             hint_warnings.append("type_hint_ignored")
+
+    # ISO 6346 check digit: flag a mismatch but never reject the number (ТЗ §4).
+    if number_type == NumberType.SEA_CONTAINER and not iso6346_valid(normalized):
+        hint_warnings.append("invalid_check_digit")
 
     if number_type == NumberType.UNKNOWN:
         result.errors.append(TrackingError(
