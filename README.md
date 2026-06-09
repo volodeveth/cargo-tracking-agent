@@ -173,11 +173,11 @@ python -m tracking_agent.cli --input examples/input.csv --format sheets
 uvicorn tracking_agent.api.app:app --reload
 ```
 
-Відкрийте http://localhost:8000 для web UI завантаження файлу (приймає `.csv` або `.xlsx`).
+Відкрийте http://127.0.0.1:8000 для web UI завантаження файлу (приймає `.csv` або `.xlsx`).
 
 **Завантаження CSV через web UI:**
 
-1. Запустіть сервер і відкрийте http://localhost:8000.
+1. Запустіть сервер і відкрийте http://127.0.0.1:8000.
 2. Натисніть «Вибрати файл», оберіть `examples/input.csv` і завантажте.
 3. Сторінка покаже JSON-результат трекінгу для кожного рядка.
 
@@ -194,11 +194,11 @@ internal-007,999-88887777
 
 ```bash
 # JSON-відповідь (за замовчуванням)
-curl -X POST http://localhost:8000/track/file \
+curl -X POST http://127.0.0.1:8000/track/file \
   -F "file=@examples/input.csv"
 
 # Завантажити результат як Excel (.xlsx)
-curl -X POST http://localhost:8000/track/file \
+curl -X POST http://127.0.0.1:8000/track/file \
   -F "file=@examples/input.csv" -F "format=xlsx" -o results.xlsx
 ```
 
@@ -209,7 +209,7 @@ curl -X POST http://localhost:8000/track/file \
 Трекінг через `curl`:
 
 ```bash
-curl -X POST http://localhost:8000/track \
+curl -X POST http://127.0.0.1:8000/track \
   -H "Content-Type: application/json" \
   -d '{
     "shipments": [
@@ -222,7 +222,7 @@ curl -X POST http://localhost:8000/track \
 Додайте `?format=xlsx` до `/track`, щоб отримати ту саму відповідь як завантаження Excel:
 
 ```bash
-curl -X POST "http://localhost:8000/track?format=xlsx" \
+curl -X POST "http://127.0.0.1:8000/track?format=xlsx" \
   -H "Content-Type: application/json" \
   -d '{"shipments":[{"id":"s1","number":"080-38652331"}]}' -o results.xlsx
 ```
@@ -245,7 +245,7 @@ cp .env.example .env
 docker compose up
 ```
 
-API доступний за адресою http://localhost:8000.
+API доступний за адресою http://127.0.0.1:8000.
 
 ---
 
@@ -347,7 +347,7 @@ internal-007,999-88887777,,,semi-structured demo
 `ShortResult` — компактний формат для інтеграцій, що містить: `id`, `number`, `type`, `current_status`, `eta`, `etd`, `last_event_at`, `source`, `errors`. Отримати його можна, додавши `?view=short` до `POST /track` (повна відповідь лишається за замовчуванням):
 
 ```bash
-curl -X POST "http://localhost:8000/track?view=short" \
+curl -X POST "http://127.0.0.1:8000/track?view=short" \
   -H "Content-Type: application/json" \
   -d '{"shipments":[{"id":"s1","number":"080-38652331"}]}'
 ```
@@ -595,7 +595,7 @@ def build_chain(number_type: NumberType, use_fixtures: bool):
 | Визначення затримки відносно ETA | `quality/risk.py` — `now > eta` і статус не термінальний → причина `past_eta` | поле `risk.delay_detected` у кожному результаті |
 | Поля `risk_level` і `delay_detected` | `models/schemas.py` блок `Risk` + `quality/risk.py` | блок `risk` у кожному результаті (`low`/`medium`/`high`) |
 | Автоматичний переклад raw status українською | `normalization/translate_uk.py` — статичний словник на всі 15 статусів (повне покриття) | поле `tracking.status_uk` (напр. `"У дорозі"`) |
-| Простий web UI для завантаження Excel | `api/web.py` — `GET /` форма завантаження, `POST /track/file` парсить `.xlsx`/`.csv` | `uvicorn tracking_agent.api.app:app` → http://localhost:8000 |
+| Простий web UI для завантаження Excel | `api/web.py` — `GET /` форма завантаження, `POST /track/file` парсить `.xlsx`/`.csv` | `uvicorn tracking_agent.api.app:app` → http://127.0.0.1:8000 |
 | Експорт результату в Excel або Google Sheets | `export/excel.py` (openpyxl, завжди) + `export/sheets.py` (опційно) | Excel: CLI `--format xlsx`, `POST /track?format=xlsx`, `POST /track/file` (`format=xlsx`) або селектор у web UI. Sheets: CLI `--format sheets` + екстра `.[sheets]` і `SHEETS_*` env (без них — відкат до JSON) |
 
 Деталі конфігурації кожної можливості — у розділі [Опційні можливості](#опційні-можливості).
